@@ -1,0 +1,60 @@
+% M-file: torque_speed_curve.m
+% This script creates a plot of the torque-speed curve of the
+% induction motor of Example 7-5.
+
+% Initialize the values needed in this program
+r1 = 0.641;      % Stator resistance (Ohms)
+x1 = 1.106;      % Stator reactance (Ohms)
+r2 = 0.332;  q    % Rotor resistance (Ohms)
+x2 = 0.464;      % Rotor reactance (Ohms)
+xm = 26.3;       % Magnetization branch reactance (Ohms)
+v_phase = 460 / sqrt(3);   % Phase voltage (Volts)
+n_sync = 1800;   % Synchronous speed (rpm)
+w_sync = 188.5;  % Synchronous speed (rad/s)
+
+% Calculate Thevenin equivalent voltage and impedance
+v_th = v_phase * (xm / sqrt((r1^2 + (x1 + xm)^2)));
+z_th = 1i * xm * (r1 + 1i * x1) / (1i * xm + r1 + 1i * x1);
+r_th = real(z_th);
+x_th = imag(z_th);
+
+% Calculate the torque-speed characteristic for many slips between 0 and 1
+s = linspace(0, 1, 51);
+s(1) = 0.001; % Avoid divide-by-zero error
+
+% Mechanical speed (rpm)
+n_m = (1 - s) * n_sync;
+
+% Preallocate torque arrays
+t_ind1 = zeros(1, 51);
+t_ind2 = zeros(1, 51);
+t_ind3 = zeros(1,51);
+
+% Calculate torque for original rotor resistance
+for ii = 1:51
+    t_ind1(ii) = (3 * v_th^2 * r2 / s(ii)) / ...
+        (w_sync * ((r_th + r2 / s(ii))^2 + (x_th + x2)^2));
+end
+
+% Calculate torque for doubled rotor resistance
+for ii = 1:51
+    t_ind2(ii) = (3 * v_th^2 * (2 * r2) / s(ii)) / ...
+        (w_sync * ((r_th + (2 * r2) / s(ii))^2 + (x_th + x2)^2));
+end
+
+% Calculate torque for halved rotor resistance
+for ii = 1:51
+    t_ind3(ii) = (3 * v_th^2 * (1/2 * r2) / s(ii)) / ...
+        (w_sync * ((r_th + (1/2 * r2) / s(ii))^2 + (x_th + x2)^2));
+end
+% Plot the torque-speed curve
+plot(n_m, t_ind1, 'Color', 'k', 'LineWidth', 2.0);
+hold on;
+plot(n_m, t_ind2, 'Color', 'k', 'LineWidth', 2.0, 'LineStyle', '-.');
+plot(n_m, t_ind3, 'Color', 'k', 'LineWidth', 2.0, 'LineStyle', '--');
+xlabel('n_m (rpm)', 'FontWeight', 'bold');
+ylabel('\tau_{ind} (Nm)', 'FontWeight', 'bold');
+title('Induction Motor Torque-Speed Characteristic', 'FontWeight', 'bold');
+legend('Original R_2', 'Doubled R_2','Halved R_2');
+grid on;
+hold off;
